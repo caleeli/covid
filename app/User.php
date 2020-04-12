@@ -45,17 +45,18 @@ class User extends Authenticatable
     protected $zoomX = 1; //2e-5; //2e-6
     protected $zoomY = 1; //2e-5; //2e-6
 
-    public function spflu()
+    public function spflu0(...$fields)
     {
+        $xfield = $fields[0];
+        $yfield = $fields[1];
         // poblacion mundial aprox 1918: 1.86 mil millones
         // http://www.unescoetxea.org/ext/futuros/es/theme_c/mod13/uncom13t01s02.htm
         $plots = [];
         $img = imagecreatefrompng(resource_path('images/1918_spanish_flu_waves.png'));
         $height = imagesy($img);
         $width = imagesx($img);
-        $xx = 2;
-        $zoomX = 0.18;
-        $zoomY = 0.5;
+        $xp = 2;
+        $zoomX = 44 / $width;
         $integral = 0;
         $x0 = 0;
         $y0 = 0;
@@ -63,18 +64,20 @@ class User extends Authenticatable
         $c = 0;
         $peak2 = 0;
         $f = 40000000 / 20871;
-        for ($x=0;$x<$width;$x+=$xx) {
-            for ($y=0;$y<$height;$y++) {
+        for ($x=0; $x<$width; $x += $xp) {
+            for ($y=0; $y<$height; $y++) {
                 $color = imagecolorat($img, $x, $y);
                 if ($color !== 0) {
-                    $plots[] = ['x' => $x * $zoomX, 'y' => ($height-$y) * $zoomY];
-                    $yy = ($height-$y) * $f;
+                    $yy = ($height - $y) * $f;
                     $peak2 = max($peak2, ($height-$y));
                     $peak = max($peak, $yy);
-                    $integral += ($x-$x0) * $yy - (($x-$x0) * abs($yy - $y0))/2;
+                    $integral += ($x-$x0) * $yy - (($x-$x0) * abs($yy - $y0)) / 2;
                     $c++;
                     $x0 = $x;
                     $y0 = $yy;
+                    $xx = $x * $zoomX;
+                    $values = compact(...$fields);
+                    $plots[] = ['x' => $values[$xfield], 'y' => $values[$yfield]];
                     break;
                 }
             }
@@ -84,50 +87,19 @@ class User extends Authenticatable
         error_log("peak2= $peak2");
         // => 194px (de la imagen png) = 371807 personas
         return $plots;
+    }
+
+    public function spflu()
+    {
+        return $this->spflu0('xx', 'yy');
     }
 
     public function spfluint()
     {
-        // poblacion mundial aprox 1918: 1.86 mil millones
-        // http://www.unescoetxea.org/ext/futuros/es/theme_c/mod13/uncom13t01s02.htm
-        $plots = [];
-        $img = imagecreatefrompng(resource_path('images/1918_spanish_flu_waves.png'));
-        $height = imagesy($img);
-        $width = imagesx($img);
-        $xx = 2;
-        $zoomX = 0.18;
-        $zoomY = $this->zoomY;
-        $integral = 0;
-        $x0 = 0;
-        $y0 = 0;
-        $peak = 0;
-        $c = 0;
-        $peak2 = 0;
-        $f = 40000000 / 20871;
-        for ($x=0;$x<$width;$x+=$xx) {
-            for ($y=0;$y<$height;$y++) {
-                $color = imagecolorat($img, $x, $y);
-                if ($color !== 0) {
-                    $yy = ($height-$y) * $f;
-                    $peak2 = max($peak2, ($height-$y));
-                    $peak = max($peak, $yy);
-                    $integral += ($x-$x0) * $yy - (($x-$x0) * abs($yy - $y0))/2;
-                    $c++;
-                    $x0 = $x;
-                    $y0 = $yy;
-                    $plots[] = ['x' => $x * $zoomX, 'y' => $integral * $zoomY];
-                    break;
-                }
-            }
-        }
-        error_log("integral= $integral");
-        error_log("peak = $peak");
-        error_log("peak2= $peak2");
-        // => 194px (de la imagen png) = 371807 personas
-        return $plots;
+        return $this->spflu0('xx', 'integral');
     }
 
-    public function covid()
+    public function covid($type = 'deaths')
     {
         $plots = [];
         $covid = Cache::remember('covid', now()->addMinutes(1), function () {
@@ -149,34 +121,31 @@ class User extends Authenticatable
             return $covid;
         });
         $data = $covid['total'];
-        $t0 = strtotime($data[0]['date']);
         $zoomY = $this->zoomY;
-        //$zoomX = 93.24 / 44 / 7 / 24 / 60 / 60;
         $zoomX = $this->zoomX;
         foreach ($data as $t => $point) {
-            //$t = strtotime($point['date']);
-            //$x = ($t - $t0);
             $x = $t / 7;
-            $y = $point['confirmed'];
+            $y = $point[$type];
             $plots[] = ['x' => $x * $zoomX, 'y' => $y * $zoomY];
         }
         error_log(json_encode($data[count($data)-1]));
         return $plots;
     }
 
-    public function ah1n1()
+    public function ah1n1($type = 'deaths')
     {
         $txt = file_get_contents(app_path('a_h1n1.txt'));
         $data = explode("\n", $txt);
         $zoomY = $this->zoomY;
         $zoomX = $this->zoomX;
+        $j = $type === 'deaths' ? 0 : 1;
         foreach ($data as $t => $line) {
             $line = preg_split('/\s+/', $line);
             $x = $t;
-            if (!isset($line[1])) {
+            if (!isset($line[$j])) {
                 break;
             }
-            $y = intval($line[1]);
+            $y = intval($line[$j]);
             $plots[] = ['x' => $x * $zoomX, 'y' => $y * $zoomY];
         }
         return $plots;
