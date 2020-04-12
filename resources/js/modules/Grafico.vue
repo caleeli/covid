@@ -24,6 +24,9 @@
         </div>
         <hr>
         SEMANA = {{ Math.round(currentX) }}
+        <div>
+          <router-link to="/enlaces" class="btn btn-info btn-sm">Ver fuentes</router-link>
+        </div>
       </div>
     </div>    
     <svg :style="{height, width}" xmlns="http://www.w3.org/2000/svg" @click="regla" @touchmove="touchmove" @mousemove="mousemove">
