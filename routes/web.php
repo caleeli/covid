@@ -11,6 +11,7 @@
 |
 */
 
+use App\User;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
