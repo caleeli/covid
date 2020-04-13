@@ -1,5 +1,13 @@
 <template>
   <div class="d-flex flex-column h-100 w-100">
+    <svg :style="{height, width}" xmlns="http://www.w3.org/2000/svg" @click="regla" @touchmove="touchmove" @mousemove="mousemove">
+      <template v-for="(data, id) in datas">
+        <template v-for="(linea, index) in lineas(data.data, id)">
+          <line :key="`lines-${id}-${index}`" v-bind="linea" :stroke="data.color" />
+        </template>
+      </template>
+      <line :x1="`${ruleX}%`" :x2="`${ruleX}%`" y1="0" y2="100%" stroke="black" stroke-dasharray="5 5"></line>
+    </svg>
     <div style="border-bottom: 2px solid black" class="d-flex w-100">
       <div class="flex-grow-1">
         <div v-for="(data, id) in datas" :key="`label-${id}`" class="text-black">
@@ -28,15 +36,7 @@
           <router-link to="/enlaces" class="btn btn-info btn-sm">Ver fuentes</router-link>
         </div>
       </div>
-    </div>    
-    <svg :style="{height, width}" xmlns="http://www.w3.org/2000/svg" @click="regla" @touchmove="touchmove" @mousemove="mousemove">
-      <template v-for="(data, id) in datas">
-        <template v-for="(linea, index) in lineas(data.data, id)">
-          <line :key="`lines-${id}-${index}`" v-bind="linea" :stroke="data.color" />
-        </template>
-      </template>
-      <line :x1="`${ruleX}%`" :x2="`${ruleX}%`" y1="0" y2="100%" stroke="black" stroke-dasharray="5 5"></line>
-    </svg>
+    </div>
   </div>
 </template>
 
