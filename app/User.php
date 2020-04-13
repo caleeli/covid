@@ -150,4 +150,34 @@ class User extends Authenticatable
         }
         return $plots;
     }
+
+    private function derivar($plots)
+    {
+        $res = [];
+        foreach ($plots as $i => $point) {
+            if ($i > 0) {
+                $delta = ($plots[$i]['y'] - $plots[$i-1]['y']) / ($plots[$i]['x'] - $plots[$i-1]['x']);
+                $res[] = [
+                    'x' => $plots[$i]['x'],
+                    'y' => $delta,
+                ];
+            }
+        }
+        return $res;
+    }
+
+    public function derivada($source, $type = 'deaths')
+    {
+        $plots = $this->$source($type);
+        $plots = $this->derivar($plots);
+        return $plots;
+    }
+
+    public function derivada2($source, $type = 'deaths')
+    {
+        $plots = $this->$source($type);
+        $plots = $this->derivar($plots);
+        $plots = $this->derivar($plots);
+        return $plots;
+    }
 }

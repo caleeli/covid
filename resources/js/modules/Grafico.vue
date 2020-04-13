@@ -1,5 +1,18 @@
 <template>
   <div class="d-flex flex-column h-100 w-100">
+    <div class="text-white bg-dark d-flex w-100 p-0">
+      <div class="flex-grow-1 p-1">
+        {{ title }}
+      </div>
+      <div class="btn-group" role="group">
+        <router-link class="btn btn-sm m-0 p-1" :class="{'btn-primary': !esDerivada, 'btn-dark': esDerivada}" style="text-transform: none;" :to="changeUrl">
+          f(t)
+        </router-link>
+        <router-link class="btn btn-sm m-0 p-1" :class="{'btn-primary': esDerivada, 'btn-dark': !esDerivada}" style="text-transform: none;" :to="changeUrl">
+          f'(t)
+        </router-link>
+      </div>
+    </div>
     <svg :style="{height, width}" xmlns="http://www.w3.org/2000/svg" @click="regla" @touchmove="touchmove" @mousemove="mousemove">
       <template v-for="(data, id) in datas">
         <template v-for="(linea, index) in lineas(data.data, id)">
@@ -60,6 +73,8 @@ export default {
     const allweeks = [];
     for(let w=0; w < 60; w+=4) if (w> 0) allweeks.push(w);
     return {
+      title: 'CASOS O MUERTES ACUMULADOS POR SEMANA',
+      changeUrl: '/derivada',
       ruleX: 0,
       currentX: 0,
       today: window.moment().format(),
@@ -78,6 +93,9 @@ export default {
     };
   },
   computed: {
+    esDerivada() {
+      return this.changeUrl === '/';
+    },
     width() {
       return '100%';
     },
@@ -145,8 +163,11 @@ export default {
       return res;
     },
     loadData(color, name, source, type) {
+      return this.loadData0(color, name, source, { type });
+    },
+    loadData0(color, name, ...params) {
       const data = [];
-      this.$api.user.call(1, source, {type}).then(plots => {
+      this.$api.user.call(1, ...params).then(plots => {
         let x1=0, y1=0;
         plots.forEach(({x,y}) => {
           data.push({
