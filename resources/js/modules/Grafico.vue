@@ -67,7 +67,7 @@ export default {
       datas,
       allweeks,
       weeks: 12,
-      maxY: 10000,
+      maxY: 100000,
       escalasY: [
         { name: 'cientos', value: 100 },
         { name: 'miles', value: 1000 },
@@ -159,7 +159,13 @@ export default {
       return {name, color, data};
     },
   },
-  mounted() {
-  },
+  watch: {
+    datas: {
+      deep: true,
+      handler() {
+        this.moverRegla(50);
+      },
+    },
+  }
 };
 </script>
