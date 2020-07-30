@@ -1,6 +1,7 @@
 window._ = require('lodash');
 const Vue = window.Vue = require('vue');
 window.moment = require('moment');
+Vue.prototype.moment = moment;
 
 /**
  * We'll load jQuery and the Bootstrap jQuery plugin which provides support
@@ -81,6 +82,7 @@ window.Vue.use(VueJddComponents.default, { jQuery: window.$ });
  * Config Vue-Router
  */
 import VueRouter from 'vue-router';
+import moment from 'moment';
 Vue.use(VueRouter);
 window.router = new VueRouter({
     routes: []

@@ -7,13 +7,13 @@ export default {
   extends: Grafico,
   data() {
     return {
-      title: 'CASE O MUERTES NUEVOS POR SEMANA',
+      title: ' POR SEMANA',
       changeUrl: '/',
     };
   },
   methods: {
-    loadData(color, name, source, type) {
-      return this.loadData0(color, name, 'derivada', { source, type });
+    loadData(color, name, source, type, country, porMillon) {
+      return this.loadData0(color, name, 'derivada', { source, type, country, porMillon });
     },
   },
 };

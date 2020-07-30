@@ -6,7 +6,6 @@ use App\Traits\HasMenus;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Date;
 use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable
@@ -99,8 +98,28 @@ class User extends Authenticatable
         return $this->spflu0('xx', 'integral');
     }
 
-    public function covid($type = 'deaths')
+    private function population($country)
     {
+        $cnt = explode("\n", file_get_contents(__DIR__ . '/poblacion.tsv'));
+        foreach ($cnt as $line) {
+            if (!trim($line)) {
+                break;
+            }
+            $pais = array_map(function ($v) {
+                return trim($v);
+            }, explode("\t", $line));
+            if (strtolower($pais[1]) === strtolower($country)) {
+                return $pais[2];// / $pais[5];
+            }
+        }
+        return 0;
+    }
+
+    public function covid($type = 'deaths', $country = 'total', $porMillon = false)
+    {
+        $rename = [
+            'United States' => 'US',
+        ];
         $plots = [];
         $covid = Cache::remember('covid', now()->addMinutes(1), function () {
             $covid = json_decode(file_get_contents('https://pomber.github.io/covid19/timeseries.json'), true);
@@ -120,15 +139,16 @@ class User extends Authenticatable
             $covid['total'] = $total;
             return $covid;
         });
-        $data = $covid['total'];
+        $data = $covid[$rename[$country] ?? $country];
+        $population = $porMillon ? $this->population($country) : 1;
         $zoomY = $this->zoomY;
         $zoomX = $this->zoomX;
         foreach ($data as $t => $point) {
             $x = $t / 7;
-            $y = $point[$type];
+            $y = ($type === 'mortalidad' ? ($point['confirmed'] > 0 ? $point['deaths'] / $point['confirmed'] : 0) * 100 : $point[$type]) * ($porMillon ? 1000000 / $population : 1);
             $plots[] = ['x' => $x * $zoomX, 'y' => $y * $zoomY];
         }
-        error_log(json_encode($data[count($data)-1]));
+        //error_log(json_encode($data[count($data)-1]));
         return $plots;
     }
 
@@ -153,22 +173,29 @@ class User extends Authenticatable
 
     private function derivar($plots)
     {
+        $resolucion = 7; // en dias
+        $lastI = 0;
+        $last = $plots[$lastI];
         $res = [];
         foreach ($plots as $i => $point) {
             if ($i > 0) {
-                $delta = ($plots[$i]['y'] - $plots[$i-1]['y']) / ($plots[$i]['x'] - $plots[$i-1]['x']);
-                $res[] = [
-                    'x' => $plots[$i]['x'],
-                    'y' => $delta,
-                ];
+                if ($i >= $lastI + $resolucion) {
+                    $delta = ($plots[$i]['y'] - $last['y']) / ($plots[$i]['x'] - $last['x']);
+                    $res[] = [
+                        'x' => $plots[$i]['x'],
+                        'y' => $delta,
+                    ];
+                    $last = $point;
+                    $lastI = $i;
+                }
             }
         }
         return $res;
     }
 
-    public function derivada($source, $type = 'deaths')
+    public function derivada($source, $type = 'deaths', $country = 'total', $porMillon = false)
     {
-        $plots = $this->$source($type);
+        $plots = $this->$source($type, $country, $porMillon);
         $plots = $this->derivar($plots);
         return $plots;
     }
