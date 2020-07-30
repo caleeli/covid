@@ -51,6 +51,11 @@
           :key="`escalaY-text-${p.y}`"
           :y="`${100-p.y}%`" x="4px">{{ p.l }}</text>
       </template>
+      <text
+        v-for="p in labels"
+        :key="`chart-labels-${p.name}`"
+        :fill="p.color"
+        :x="`${p.x}%`" :y="`${p.y}%`">{{ p.name }}</text>
     </svg>
     <svg :style="{height: '2em', width}" xmlns="http://www.w3.org/2000/svg">
       <text
@@ -163,6 +168,24 @@ export default {
     };
   },
   computed: {
+    labels() {
+      const labels = [];
+      this.datas.forEach(serie => {
+        if (serie.data.length) {
+          const zx = 100 / this.weeks;
+          const zy = 1 / this.maxY;
+          const x = serie.data[serie.data.length - 1].x2 * zx;
+          const y = 100 - serie.data[serie.data.length - 1].y2 * zy;
+          labels.push({
+            name: serie.name,
+            color: serie.color,
+            x,
+            y,
+          });
+        }
+      });
+      return labels;
+    },
     escalaMes() {
       const points = [];
       const zx = 100 / this.weeks;
